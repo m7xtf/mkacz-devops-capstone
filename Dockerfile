@@ -1,5 +1,6 @@
 
-FROM nginx:1.23.2
+#FROM nginx:1.23.2
+FROM nginx:latest
 
 WORKDIR /tmp
 
