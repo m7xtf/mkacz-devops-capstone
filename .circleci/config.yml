@@ -30,8 +30,10 @@ jobs:
             apk update
             apk add make
       - run:
-          name: lint the dockerfile
+          name: lint the docker file
           command: make lint
+      - run:
+          name: build the docker image
 
 
 # Invoke jobs via workflows
