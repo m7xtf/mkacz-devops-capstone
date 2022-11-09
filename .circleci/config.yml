@@ -34,6 +34,7 @@ jobs:
           command: make lint
       - run:
           name: build the docker image
+          command: make build
 
 
 # Invoke jobs via workflows
