@@ -23,6 +23,7 @@ jobs:
       - image: docker:20.10.21-cli
     steps:
       - checkout
+      - setup_remote_docker
       - run:
           name: install make
           command: |
