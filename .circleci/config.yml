@@ -18,7 +18,7 @@ jobs:
           name: "Say hello"
           command: "echo Hello, World!"
 
-  build-image:
+  build-n-push-image:
     docker:
       - image: docker:20.10.21-cli
     steps:
@@ -35,6 +35,9 @@ jobs:
       - run:
           name: build the docker image
           command: make build
+      - run:
+          name: push the image to docker hub
+          command: make push
 
 
 # Invoke jobs via workflows
@@ -46,5 +49,5 @@ workflows:
 
   my-workflow:
     jobs:
-      - build-image
+      - build-n-push-image
 
