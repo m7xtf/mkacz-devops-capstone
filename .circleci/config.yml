@@ -25,12 +25,12 @@ jobs:
       - checkout
       - run:
           name: install make
-          shell: |
+          command: |
             apk update
             apk add make
       - run:
           name: lint the dockerfile
-          run: make lint
+          command: make lint
 
 
 # Invoke jobs via workflows
@@ -39,3 +39,8 @@ workflows:
   say-hello-workflow:
     jobs:
       - say-hello
+
+  my-workflow:
+    jobs:
+      - build-image
+
