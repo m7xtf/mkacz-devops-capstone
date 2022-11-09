@@ -18,6 +18,21 @@ jobs:
           name: "Say hello"
           command: "echo Hello, World!"
 
+  build-image:
+    docker:
+      - image: docker:20.10.21-cli
+    steps:
+      - checkout
+      - run:
+          name: install make
+          shell: |
+            apk update
+            apk add make
+      - run:
+          name: lint the dockerfile
+          run: make lint
+
+
 # Invoke jobs via workflows
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
 workflows:
