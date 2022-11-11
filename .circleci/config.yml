@@ -47,6 +47,9 @@ jobs:
     steps:
       - checkout
       - run:
+          name: install make
+          command: yum install make
+      - run:
           name: connect kubectl to the cluster
           command: make connect-kubectl
       - run:
