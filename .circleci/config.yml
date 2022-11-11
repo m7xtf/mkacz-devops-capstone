@@ -2,6 +2,7 @@
 # See: https://circleci.com/docs/2.0/configuration-reference
 version: 2.1
 
+
 # Define a job to be invoked later in a workflow.
 # See: https://circleci.com/docs/2.0/configuration-reference/#jobs
 jobs:
@@ -18,7 +19,7 @@ jobs:
           name: "Say hello"
           command: "echo Hello, World!"
 
-  build-n-push-image:
+  build-n-push-img:
     docker:
       - image: docker:20.10.21-cli
     steps:
@@ -39,6 +40,22 @@ jobs:
           name: push the image to docker hub
           command: make push
 
+  deploy-img-to-kube:
+    docker:
+      - image: amazon/aws-cli
+    resource_class: small
+    steps:
+      - checkout
+      - run:
+          name: connect kubectl to the cluster
+          command: make connect-kubectl
+      - run:
+          name: deploy image to the cluster
+          command: make deploy-img-to-kube
+      - run:
+          name: delete previous deployments
+          command: make del-old-deployment
+
 
 # Invoke jobs via workflows
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
@@ -49,5 +66,9 @@ workflows:
 
   my-workflow:
     jobs:
-      - build-n-push-image
+      - build-n-push-img
+      - deploy-img-to-kube:
+          requires:
+            - build-n-push-img
+
 
