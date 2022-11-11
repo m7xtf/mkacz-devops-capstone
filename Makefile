@@ -11,3 +11,11 @@ push:
 	docker tag mkacz-devops-capstone ${DOCKERHUB_ID}/mkacz-devops-capstone:${CIRCLE_SHA1}
 	docker push ${DOCKERHUB_ID}/mkacz-devops-capstone:${CIRCLE_SHA1}
 
+create-cluster:
+	aws cloudformation deploy --stack-name kube-04 --template-file kubernetes-cluster.yml --capabilities CAPABILITY_IAM --parameter-overrides EnvName=kube-04 SshKeyName=udacity
+
+connect-kubectl:
+	aws eks update-kubeconfig --name ${K8S_CLUSTER_NAME}
+
+
+

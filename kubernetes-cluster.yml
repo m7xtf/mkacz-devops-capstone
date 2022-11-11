@@ -1,0 +1,151 @@
+
+
+AWSTemplateFormatVersion: 2010-09-09
+
+
+Parameters:
+    EnvName:
+        Type: String
+    VpcCidrBlock:
+        Type: String
+        Default: 10.0.0.0/16
+    PubSubnet01CidrBlock:
+        Type: String
+        Default: 10.0.0.0/24
+    PubSubnet02CidrBlock:
+        Type: String
+        Default: 10.0.1.0/24
+    SshKeyName:
+        Type: String
+
+
+Resources:
+    Vpc:
+        Type: AWS::EC2::VPC
+        Properties:
+            CidrBlock: !Ref VpcCidrBlock
+            EnableDnsHostnames: true
+            EnableDnsSupport: true
+            Tags:
+              - Key: Name
+                Value: !Sub ${EnvName}-vpc
+
+    InetGw:
+        Type: AWS::EC2::InternetGateway
+        Properties:
+            Tags:
+              - Key: Name
+                Value: !Sub ${EnvName}-inet-gw
+    InetGwAttach:
+        Type: AWS::EC2::VPCGatewayAttachment
+        Properties:
+            InternetGatewayId: !Ref InetGw
+            VpcId: !Ref Vpc
+
+    PubSubnet01:
+        Type: AWS::EC2::Subnet
+        Properties:
+            AvailabilityZone: !Select [0, !GetAZs '']
+            CidrBlock: !Ref PubSubnet01CidrBlock
+            MapPublicIpOnLaunch: true
+            VpcId: !Ref Vpc
+            Tags:
+              - Key: Name
+                Value: !Sub ${EnvName}-pub-subnet-01-az0
+    PubSubnet02:
+        Type: AWS::EC2::Subnet
+        Properties:
+            AvailabilityZone: !Select [1, !GetAZs '']
+            CidrBlock: !Ref PubSubnet02CidrBlock
+            MapPublicIpOnLaunch: true
+            VpcId: !Ref Vpc
+            Tags:
+              - Key: Name
+                Value: !Sub ${EnvName}-pub-subnet-02-az1
+
+    PubSubnetsRouteTab:
+        Type: AWS::EC2::RouteTable
+        Properties:
+            VpcId: !Ref Vpc
+            Tags:
+              - Key: Name
+                Value: !Sub ${EnvName}-pub-subnets-route-tab
+    PubSubnetsInetRoute:
+        Type: AWS::EC2::Route
+        Properties:
+            DestinationCidrBlock: 0.0.0.0/0
+            GatewayId: !Ref InetGw
+            RouteTableId: !Ref PubSubnetsRouteTab
+    PubSubnet01RouteTabAssoc:
+        Type: AWS::EC2::SubnetRouteTableAssociation
+        Properties:
+            RouteTableId: !Ref PubSubnetsRouteTab
+            SubnetId: !Ref PubSubnet01
+    PubSubnet02RouteTabAssoc:
+        Type: AWS::EC2::SubnetRouteTableAssociation
+        Properties:
+            RouteTableId: !Ref PubSubnetsRouteTab
+            SubnetId: !Ref PubSubnet02
+
+    myEKSClusterRole:
+        Type: AWS::IAM::Role
+        Properties:
+            AssumeRolePolicyDocument:
+                Version: "2012-10-17"
+                Statement:
+                  - Effect: Allow
+                    Principal:
+                        Service:
+                          - eks.amazonaws.com
+                    Action:
+                      - 'sts:AssumeRole'
+            ManagedPolicyArns:
+              - arn:aws:iam::aws:policy/AmazonEKSClusterPolicy
+
+    myEKSCluster:
+        Type: AWS::EKS::Cluster
+        Properties:
+            Name: !Sub ${EnvName}-myEKSCluster
+            ResourcesVpcConfig:
+                EndpointPublicAccess: true
+                SubnetIds:
+                  - !Ref PubSubnet01
+                  - !Ref PubSubnet02
+            RoleArn: !GetAtt myEKSClusterRole.Arn
+
+    myEKSWorkerNodeRole:
+        Type: AWS::IAM::Role
+        Properties:
+            AssumeRolePolicyDocument:
+                Version: "2012-10-17"
+                Statement:
+                  - Effect: Allow
+                    Principal:
+                        Service:
+                          - ec2.amazonaws.com
+                    Action:
+                      - 'sts:AssumeRole'
+            ManagedPolicyArns:
+              - arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy
+              - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+              - arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
+
+    myEKSNodeGroup:
+        Type: AWS::EKS::Nodegroup
+        Properties:
+            CapacityType: ON_DEMAND
+            ClusterName: !Ref myEKSCluster
+            DiskSize: 8
+            InstanceTypes:
+              - t3.micro
+            NodeRole: !GetAtt myEKSWorkerNodeRole.Arn
+            RemoteAccess:
+                Ec2SshKey: !Sub ${SshKeyName}
+            ScalingConfig:
+                DesiredSize: 2
+                MaxSize: 2
+                MinSize: 2
+            Subnets:
+              - !Ref PubSubnet01
+              - !Ref PubSubnet02
+   
