@@ -21,7 +21,7 @@ deploy-img-to-kube:
 	kubectl create deploy mkacz-devops-capstone-${CIRCLE_SHA1} --image=${DOCKERHUB_ID}/mkacz-devops-capstone:${CIRCLE_SHA1}
 
 del-old-deployment:
-	ubectl get deployments |grep mkacz-devops-capstone|grep ${CIRCLE_SHA1} -v |awk '{print "kubectl delete deployment "$1}' |bash
+	kubectl get deployments |grep mkacz-devops-capstone|grep ${CIRCLE_SHA1} -v |awk '{print "kubectl delete deployment "$1}' |bash
 
 
 
