@@ -50,6 +50,11 @@ jobs:
           name: install make
           command: yum install make -y
       - run:
+          name: install kubectl
+          command: |
+            curl -LO "https://dl.k8s.io/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl.sha256"
+            sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+      - run:
           name: connect kubectl to the cluster
           command: make connect-kubectl
       - run:
