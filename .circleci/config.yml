@@ -47,22 +47,20 @@ jobs:
     steps:
       - checkout
       - run:
-          name: install make
-          command: yum install make -y
-      - run:
           name: install kubectl
           command: |
             curl -LO "https://dl.k8s.io/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
             install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
       - run:
           name: connect kubectl to the cluster
-          command: make connect-kubectl
+          command: aws eks update-kubeconfig --name ${KUBE_CLUSTER_NAME}
       - run:
           name: deploy image to the cluster
-          command: make deploy-img-to-kube
+          command: kubectl create deploy mkacz-devops-capstone-${CIRCLE_SHA1} --image=${DOCKERHUB_ID}/mkacz-devops-capstone:${CIRCLE_SHA1}
       - run:
           name: delete previous deployments
-          command: make del-old-deployment
+          command: |
+            kubectl get deployments |grep mkacz-devops-capstone|grep ${CIRCLE_SHA1} -v |awk '{print "kubectl delete deployment " $1}' |bash
 
 
 # Invoke jobs via workflows
