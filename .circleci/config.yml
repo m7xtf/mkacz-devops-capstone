@@ -45,9 +45,23 @@ jobs:
           name: deploy image to the cluster
           command: kubectl create deploy mkacz-devops-capstone-${CIRCLE_SHA1} --image=${DOCKERHUB_ID}/mkacz-devops-capstone:${CIRCLE_SHA1}
       - run:
-          name: delete previous deployments
+          name: expose the containers cluster as a http service
           command: |
-            kubectl get deployments |grep mkacz-devops-capstone|grep ${CIRCLE_SHA1} -v |awk '{print "kubectl delete deployment " $1}' |bash
+            kubectl expose deployment mkacz-devops-capstone-${CIRCLE_SHA1} --type=LoadBalancer --port=80 --target-port=80 --name=lb-${CIRCLE_SHA1}
+            sleep 150
+      - run:
+          name: create/update cloudfront distribution
+          command: |
+            export ORIGIN=$(kubectl get services|grep $CIRCLE_SHA1|awk '{print $4}')
+            aws cloudformation deploy --stack-name ${CLOUDFRONT_STACK} --template-file cloudfront-distribution.yml --parameter-overrides Origin=${ORIGIN}
+
+
+            
+
+#      - run:
+ #         name: delete previous deployments
+  #        command: |
+   #         kubectl get deployments |grep mkacz-devops-capstone|grep ${CIRCLE_SHA1} -v |awk '{print "kubectl delete deployment " $1}' |bash
 
 
 # Invoke jobs via workflows

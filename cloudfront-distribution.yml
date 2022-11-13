@@ -1,0 +1,32 @@
+
+
+AWSTemplateFormatVersion: 2010-09-09
+
+
+Parameters:
+    Origin:
+        Type: String
+
+
+Resources:
+    myCloudFront:
+        Type: AWS::CloudFront::Distribution
+        Properties:
+            DistributionConfig:
+                DefaultCacheBehavior:
+                    AllowedMethods: [GET, HEAD]
+                    CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad # CachingDisabled managed policy
+                    TargetOriginId: !Sub ${Origin}
+                    ViewerProtocolPolicy: allow-all
+                Enabled: true
+                IPV6Enabled: false
+                Origins:
+                  - CustomOriginConfig:
+                        HTTPPort: 80
+                        OriginProtocolPolicy: http-only
+                    DomainName: !Sub ${Origin}
+                    Id: !Sub ${Origin}
+                    OriginShield:
+                        Enabled: false
+
+ 
