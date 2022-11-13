@@ -55,13 +55,26 @@ jobs:
             export ORIGIN=$(kubectl get services|grep $CIRCLE_SHA1|awk '{print $4}')
             aws cloudformation deploy --stack-name ${CLOUDFRONT_STACK} --template-file cloudfront-distribution.yml --parameter-overrides Origin=${ORIGIN}
 
-
-            
-
-#      - run:
- #         name: delete previous deployments
-  #        command: |
-   #         kubectl get deployments |grep mkacz-devops-capstone|grep ${CIRCLE_SHA1} -v |awk '{print "kubectl delete deployment " $1}' |bash
+  cleanup:
+    docker:
+      - image: amazon/aws-cli
+    resource_class: small
+    steps:
+      - checkout
+      - run:
+          name: install kubectl
+          command: |
+            curl -LO "https://dl.k8s.io/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+            install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+      - run:
+          name: delete previous exposition
+          command: |
+            export PREV_SHA1=$(kubectl get deployments|grep mkacz-devops-capstone |grep ${CIRCLE_SHA1} -v |sed -e 's/\-/ /g' |awk '{print $4}')
+            kubectl delete service lb-${PREV_SHA1}
+      - run:
+          name: delete previous deployment
+          command: |
+            kubectl get deployments |grep mkacz-devops-capstone|grep ${CIRCLE_SHA1} -v |awk '{print "kubectl delete deployment " $1}' |bash
 
 
 # Invoke jobs via workflows
@@ -73,5 +86,8 @@ workflows:
       - deploy-img-to-kube:
           requires:
             - build-n-push-img
+      - cleanup:
+          requires:
+            - deploy-img-to-kube
 
 
